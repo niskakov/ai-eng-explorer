@@ -1,8 +1,9 @@
 import { useState, ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, BookOpen, Settings, Menu, X, GraduationCap } from 'lucide-react';
+import { Home, BookOpen, Settings, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface LayoutProps {
   children: ReactNode;
@@ -11,11 +12,11 @@ interface LayoutProps {
 const Layout = ({ children }: LayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
 
   const navItems = [
     { path: '/', icon: Home, label: 'Главная' },
-    { path: '/learning', icon: GraduationCap, label: 'Обучение' },
-    { path: '/admin', icon: Settings, label: 'Админ-панель' },
+    ...(isAuthenticated ? [{ path: '/admin', icon: Settings, label: 'Админ-панель' }] : []),
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -35,7 +36,7 @@ const Layout = ({ children }: LayoutProps) => {
                 <BookOpen className="w-6 h-6 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="font-bold text-lg">EnglishPro</h1>
+                <h1 className="font-bold text-lg">Skyline English</h1>
                 <p className="text-xs text-muted-foreground">Learning Platform</p>
               </div>
             </div>

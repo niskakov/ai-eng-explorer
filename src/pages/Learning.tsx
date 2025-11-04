@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getLessonById, lessons } from '@/data/mockData';
+import { tracks } from '@/data/mockData';
+import { useLessons } from '@/contexts/LessonsContext';
 import LessonContent from '@/components/LessonContent';
 import AIAssistant from '@/components/AIAssistant';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, List } from 'lucide-react';
+import { ChevronLeft, ChevronRight, List, ArrowLeft } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
 
 const Learning = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { lessons, getLessonById } = useLessons();
   const [showLessonList, setShowLessonList] = useState(false);
   const currentLesson = id ? getLessonById(id) : undefined;
 
@@ -29,13 +31,16 @@ const Learning = () => {
     );
   }
 
-  const currentIndex = lessons.findIndex((l) => l.id === currentLesson.id);
-  const prevLesson = currentIndex > 0 ? lessons[currentIndex - 1] : null;
-  const nextLesson = currentIndex < lessons.length - 1 ? lessons[currentIndex + 1] : null;
+  // Получаем уроки того же уровня и трека
+  const sameLevelLessons = lessons
+    .filter((l) => l.trackId === currentLesson.trackId && l.level === currentLesson.level)
+    .sort((a, b) => a.order - b.order);
 
-  const sameLevelLessons = lessons.filter(
-    (l) => l.trackId === currentLesson.trackId && l.level === currentLesson.level
-  );
+  const currentIndex = sameLevelLessons.findIndex((l) => l.id === currentLesson.id);
+  const prevLesson = currentIndex > 0 ? sameLevelLessons[currentIndex - 1] : null;
+  const nextLesson = currentIndex < sameLevelLessons.length - 1 ? sameLevelLessons[currentIndex + 1] : null;
+
+  const track = tracks.find((t) => t.id === currentLesson.trackId);
 
   return (
     <div className="h-full flex">
@@ -51,7 +56,7 @@ const Learning = () => {
                 <button
                   key={lesson.id}
                   onClick={() => {
-                    navigate(`/learning/${lesson.id}`);
+                    navigate(`/lesson/${lesson.id}`);
                     setShowLessonList(false);
                   }}
                   className={`w-full text-left p-3 rounded-lg mb-1 transition-colors ${
@@ -84,19 +89,35 @@ const Learning = () => {
         <div className="flex-1 overflow-auto">
           <div className="container mx-auto px-8 py-8 max-w-4xl">
             <div className="mb-6 flex items-center justify-between">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowLessonList(!showLessonList)}
-                className="gap-2"
-              >
-                <List className="w-4 h-4" />
-                {showLessonList ? 'Скрыть' : 'Показать'} список уроков
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/')}
+                  className="gap-2"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Назад
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowLessonList(!showLessonList)}
+                  className="gap-2"
+                >
+                  <List className="w-4 h-4" />
+                  {showLessonList ? 'Скрыть' : 'Показать'} список уроков
+                </Button>
+              </div>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">
-                  {currentIndex + 1} из {lessons.length}
+                  Урок {currentIndex + 1} из {sameLevelLessons.length}
                 </span>
+                {track && (
+                  <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded">
+                    {track.icon} {track.name} • {currentLesson.level}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -107,7 +128,7 @@ const Learning = () => {
               {prevLesson ? (
                 <Button
                   variant="outline"
-                  onClick={() => navigate(`/learning/${prevLesson.id}`)}
+                  onClick={() => navigate(`/lesson/${prevLesson.id}`)}
                   className="gap-2"
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -122,7 +143,7 @@ const Learning = () => {
 
               {nextLesson ? (
                 <Button
-                  onClick={() => navigate(`/learning/${nextLesson.id}`)}
+                  onClick={() => navigate(`/lesson/${nextLesson.id}`)}
                   className="gap-2"
                 >
                   <div className="text-right">
