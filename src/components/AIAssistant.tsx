@@ -16,12 +16,7 @@ interface AIAssistantProps {
 }
 
 const AIAssistant = ({ lesson }: AIAssistantProps) => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: 'assistant',
-      content: `Привет! Я твой ИИ-помощник. Я помогу тебе разобраться с темой "${lesson.title}". Задавай любые вопросы!`,
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -32,6 +27,13 @@ const AIAssistant = ({ lesson }: AIAssistantProps) => {
     }
   }, [messages]);
 
+  // Seed intro
+  useEffect(() => {
+    const intro = `Привет! Я помогу тебе по теме "${lesson.title}". Задавай вопросы или попроси объяснить с примерами.`;
+    setMessages([{ role: 'assistant', content: intro }]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lesson.id]);
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
@@ -40,15 +42,22 @@ const AIAssistant = ({ lesson }: AIAssistantProps) => {
     setInput('');
     setIsLoading(true);
 
-    // Симуляция ответа ИИ (здесь будет интеграция с Lovable AI)
+    // Простая имитация тьютора: перефраз, подсказка, следующий шаг
     setTimeout(() => {
+      const tips = [
+        'Попробуй привести пример.',
+        'Сформулируй мысль проще.',
+        'Обрати внимание на порядок слов.',
+        'Используй времена Present/Past корректно.',
+      ];
+      const tip = tips[Math.floor(Math.random() * tips.length)];
       const assistantMessage: Message = {
         role: 'assistant',
-        content: `Отличный вопрос! Давай разберёмся с этим вместе. По теме "${lesson.title}" я могу объяснить это так: [Здесь будет реальный ответ от ИИ после интеграции с Lovable AI]`,
+        content: `Понял тебя. ${tip} Если хочешь, я могу задать контрольный вопрос по теме "${lesson.title}" или продолжить диалог по сценарию.`,
       };
       setMessages((prev) => [...prev, assistantMessage]);
       setIsLoading(false);
-    }, 1000);
+    }, 700);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -113,6 +122,9 @@ const AIAssistant = ({ lesson }: AIAssistantProps) => {
           <Button onClick={handleSend} disabled={isLoading || !input.trim()} size="icon">
             <Send className="w-4 h-4" />
           </Button>
+        </div>
+        <div className="mt-2 text-xs text-muted-foreground">
+          Совет: для диалога начните с роли и цели (например: "Я клиент, хочу заказать кофе"). Нажмите Отправить — продолжу как собеседник.
         </div>
       </div>
     </Card>

@@ -8,10 +8,81 @@ interface LessonContentProps {
 
 const LessonContent = ({ lesson }: LessonContentProps) => {
   const getVideoEmbedUrl = (url: string, type?: string) => {
-    if (type === 'youtube') {
-      return url;
+    const normalizedUrl = url.trim();
+
+    // YouTube handling (auto-convert watch/share links to embed)
+    const isYouTube =
+      type === 'youtube' || /youtube\.com|youtu\.be/.test(normalizedUrl);
+    if (isYouTube) {
+      try {
+        const u = new URL(normalizedUrl);
+        let videoId = '';
+        let startSeconds: number | undefined;
+
+        // Parse start time from common params (t or start)
+        const tParam = u.searchParams.get('t') || u.searchParams.get('start');
+        if (tParam) {
+          // Supports formats like 90, 1m30s
+          const match = /^(?:(\d+)m)?(?:(\d+)s)?$/.exec(tParam);
+          if (match) {
+            const mins = match[1] ? parseInt(match[1], 10) : 0;
+            const secs = match[2] ? parseInt(match[2], 10) : (!match[1] ? parseInt(tParam, 10) : 0);
+            if (!Number.isNaN(mins) || !Number.isNaN(secs)) {
+              startSeconds = mins * 60 + (Number.isNaN(secs) ? 0 : secs);
+            }
+          } else {
+            const secs = parseInt(tParam, 10);
+            if (!Number.isNaN(secs)) startSeconds = secs;
+          }
+        }
+
+        if (u.hostname.includes('youtu.be')) {
+          // https://youtu.be/<id>
+          videoId = u.pathname.replace('/', '');
+        } else if (u.hostname.includes('youtube.com')) {
+          // https://www.youtube.com/watch?v=<id>
+          if (u.pathname.startsWith('/watch')) {
+            videoId = u.searchParams.get('v') || '';
+          } else if (u.pathname.startsWith('/shorts/')) {
+            videoId = u.pathname.split('/')[2] || '';
+          } else if (u.pathname.startsWith('/embed/')) {
+            // already embed
+            return normalizedUrl;
+          }
+        }
+
+        if (videoId) {
+          const base = `https://www.youtube.com/embed/${videoId}`;
+          return startSeconds ? `${base}?start=${startSeconds}` : base;
+        }
+      } catch {
+        // fallthrough to return original URL
+      }
+      return normalizedUrl;
     }
-    return url;
+
+    // Google Drive preview links
+    const isGDrive = type === 'gdrive' || /drive\.google\.com/.test(normalizedUrl);
+    if (isGDrive) {
+      try {
+        const u = new URL(normalizedUrl);
+        // Formats:
+        // - https://drive.google.com/file/d/<id>/view?usp=sharing -> /file/d/<id>/preview
+        // - https://drive.google.com/open?id=<id> -> /file/d/<id>/preview
+        if (u.pathname.startsWith('/file/d/')) {
+          const parts = u.pathname.split('/');
+          const id = parts[3];
+          if (id) return `https://drive.google.com/file/d/${id}/preview`;
+        }
+        const id = u.searchParams.get('id');
+        if (id) return `https://drive.google.com/file/d/${id}/preview`;
+      } catch {
+        // ignore
+      }
+      return normalizedUrl;
+    }
+
+    return normalizedUrl;
   };
 
   return (
@@ -60,24 +131,6 @@ const LessonContent = ({ lesson }: LessonContentProps) => {
           </ReactMarkdown>
         </div>
       </Card>
-
-      {lesson.exercises && lesson.exercises.length > 0 && (
-        <Card className="p-8">
-          <h2 className="text-2xl font-bold mb-6">Упражнения</h2>
-          <div className="space-y-6">
-            {lesson.exercises.map((exercise, index) => (
-              <div key={exercise.id} className="border-l-4 border-primary pl-4">
-                <p className="font-medium mb-2">
-                  {index + 1}. {exercise.question}
-                </p>
-                <div className="text-sm text-muted-foreground">
-                  Тип: {exercise.type === 'fill' ? 'Заполнить пропуск' : 'Текстовый ответ'}
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
     </div>
   );
 };

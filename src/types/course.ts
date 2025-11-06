@@ -23,12 +23,47 @@ export interface Lesson {
   order: number;
 }
 
-export interface Exercise {
-  id: string;
-  question: string;
-  answer: string;
-  type: 'text' | 'choice' | 'fill';
-}
+export type Exercise =
+  | {
+      id: string;
+      type: 'dialogue';
+      title: string;
+      scenario: string; // e.g., В кафе, в аэропорту
+      role?: string; // роль ученика (customer, candidate, passenger)
+      goals?: string[]; // цели диалога
+      level?: Level;
+    }
+  | {
+      id: string;
+      type: 'lexical_match';
+      title: string;
+      left: string[]; // e.g., make, do, have
+      right: string[]; // e.g., a decision, homework, a break
+      pairs: Array<[number, number]>; // индексные соответствия (правильные)
+    }
+  | {
+      id: string;
+      type: 'lexical_cloze';
+      title: string;
+      text: string; // Текст с плейсхолдерами __1__, __2__
+      answers: string[]; // правильные ответы по индексам
+    }
+  | {
+      id: string;
+      type: 'grammar_discovery';
+      title: string;
+      examples: string[]; // набор предложений для наблюдения
+      expectedRule?: string; // эталонное правило для показа
+      checks?: { question: string; answer: string }[]; // мини-проверки
+    }
+  | {
+      id: string;
+      type: 'task_mission';
+      title: string;
+      brief: string; // описание задания
+      checklist?: string[]; // шаги
+      submissionType?: 'text' | 'link';
+    };
 
 export interface Resource {
   id: string;

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { tracks } from '@/data/mockData';
 import { useLessons } from '@/contexts/LessonsContext';
 import LessonContent from '@/components/LessonContent';
 import AIAssistant from '@/components/AIAssistant';
@@ -12,7 +11,7 @@ import { Card } from '@/components/ui/card';
 const Learning = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { lessons, getLessonById } = useLessons();
+  const { lessons, tracks, getLessonById } = useLessons();
   const [showLessonList, setShowLessonList] = useState(false);
   const currentLesson = id ? getLessonById(id) : undefined;
 
